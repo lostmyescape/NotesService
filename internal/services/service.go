@@ -33,3 +33,16 @@ func (s *Service) initRepositories(db *sql.DB) {
 	s.usersRepo = users.NewRepo(db)
 	s.notesRepo = notes.NewRepo(db)
 }
+
+type Response struct {
+	Object       any    `json:"object,omitempty"`
+	ErrorMessage string `json:"error,omitempty"`
+}
+
+func (r *Response) Error() string {
+	return r.ErrorMessage
+}
+
+func (s *Service) NewError(err string) (int, *Response) {
+	return 400, &Response{ErrorMessage: err}
+}

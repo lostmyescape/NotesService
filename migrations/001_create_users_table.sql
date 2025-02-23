@@ -4,3 +4,4 @@ CREATE TABLE users (
                        hashed_password TEXT NOT NULL,
                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+

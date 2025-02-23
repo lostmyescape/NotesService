@@ -1,6 +1,7 @@
-postgres_db: "notes"
-postgres_user: "notes_user"
-postgres_password: "asdfg"
+db_name: "notes_db"
+user: "postgres"
+password: "asdfg"
 port: 5432
 host: "localhost"
 
+ 

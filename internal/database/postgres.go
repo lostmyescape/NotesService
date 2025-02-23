@@ -10,9 +10,9 @@ import (
 )
 
 type DB struct {
-	Name     string `yaml:"postgres_db"`
-	User     string `yaml:"postgres_user"`
-	Password string `yaml:"postgres_password"`
+	Name     string `yaml:"db_name"`
+	User     string `yaml:"user"`
+	Password string `yaml:"password"`
 	Port     string `yaml:"port"`
 	Host     string `yaml:"host"`
 }
