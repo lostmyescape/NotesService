@@ -31,6 +31,9 @@ func main() {
 	// api notes
 	api.POST("/note", svc.CreateNoteHandler, middleware.AuthMiddleware)
 	api.GET("/notes", svc.GetAllNotesHandler, middleware.AuthMiddleware)
+	api.GET("/note/:id", svc.GetNoteHandler, middleware.AuthMiddleware)
+	api.PUT("/note/:id", svc.UpdateNoteHandler, middleware.AuthMiddleware)
+	api.DELETE("/note/:id", svc.DeleteNoteHandler, middleware.AuthMiddleware)
 
 	router.Logger.Fatal(router.Start(":8080"))
 

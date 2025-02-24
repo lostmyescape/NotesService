@@ -14,6 +14,7 @@ type Notes struct {
 // структура для получения заметок
 
 type GetNotes struct {
+	Id        int       `json:"id"`
 	Title     string    `json:"title"`
 	Body      string    `json:"body"`
 	CreatedAt time.Time `json:"created_at"`
