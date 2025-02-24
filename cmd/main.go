@@ -3,6 +3,7 @@ package main
 import (
 	"NotesService/internal/database"
 	"NotesService/internal/logger"
+	"NotesService/internal/middleware"
 	"NotesService/internal/services"
 	"github.com/labstack/echo/v4"
 )
@@ -15,6 +16,8 @@ func main() {
 		log.Fatal(err)
 	}
 
+	log.Print("Успешное подключение к бд")
+
 	svc := services.NewService(db, log)
 
 	router := echo.New()
@@ -24,7 +27,10 @@ func main() {
 	// api users
 	api.POST("/register", svc.Register)
 	api.POST("/login", svc.Login)
-	//api.DELETE("/words/:id", svc.DeleteUser)
+
+	// api notes
+	api.POST("/note", svc.CreateNoteHandler, middleware.AuthMiddleware)
+	api.GET("/notes", svc.GetAllNotesHandler, middleware.AuthMiddleware)
 
 	router.Logger.Fatal(router.Start(":8080"))
 

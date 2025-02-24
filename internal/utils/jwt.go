@@ -5,13 +5,13 @@ import (
 	"time"
 )
 
-var jwtSecret = []byte("supersecretkey")
+var jwtSecret = []byte("your-secret-key")
 
 // GenerateToken генерация jwt токена на 24 часа
-func GenerateToken(username string) (string, error) {
+func GenerateToken(id int) (string, error) {
 	claims := jwt.MapClaims{
-		"username": username,
-		"exp":      time.Now().Add(time.Hour * 24).Unix(),
+		"userID": id,
+		"exp":    time.Now().Add(time.Hour * 24).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)

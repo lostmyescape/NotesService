@@ -28,7 +28,7 @@ func (r *Repo) RegisterByEmail(email, hashedPassword string, createdAt time.Time
 	return nil
 }
 
-// SelectPasswordByEmail достанет пароль из бд по имейлу
+// SelectPasswordByEmail достанет пароль
 func (r *Repo) SelectPasswordByEmail(email string) (string, error) {
 	var password string
 	err := r.db.QueryRow(`SELECT hashed_password FROM users WHERE email = $1`, email).Scan(&password)
@@ -37,4 +37,15 @@ func (r *Repo) SelectPasswordByEmail(email string) (string, error) {
 	}
 
 	return password, nil
+}
+
+// SelectIdByEmail достанет айди
+func (r *Repo) SelectIdByEmail(email string) (int, error) {
+	var userID int
+	err := r.db.QueryRow(`SELECT id FROM users WHERE email = $1`, email).Scan(&userID)
+	if err != nil {
+		return 0, err
+	}
+
+	return userID, nil
 }

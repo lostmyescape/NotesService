@@ -34,8 +34,6 @@ func PostgresConnection() (*sql.DB, error) {
 		return nil, err
 	}
 
-	fmt.Println("Успешное подключение к бд")
-
 	return db, nil
 }
 
