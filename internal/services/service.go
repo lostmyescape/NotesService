@@ -1,8 +1,8 @@
 package services
 
 import (
-	"NotesService/internal/handlers/notes"
-	"NotesService/internal/handlers/users"
+	"NotesService/internal/notes"
+	"NotesService/internal/users"
 	"database/sql"
 	"github.com/labstack/echo/v4"
 )

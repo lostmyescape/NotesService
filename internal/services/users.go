@@ -1,10 +1,13 @@
 package services
 
 import (
-	"NotesService/internal/models/users"
-	"NotesService/internal/utils"
+	"NotesService/internal/users"
+	"NotesService/pkg/jwt"
+	"NotesService/pkg/password"
+	"errors"
 	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
+	"github.com/lib/pq"
 	"log"
 	"net/http"
 	"time"
@@ -23,14 +26,14 @@ func (s *Service) Register(c echo.Context) error {
 
 	// валидация полей
 	if err := validate.Var(user.Email, "required,email"); err != nil {
-		return c.JSON(s.NewError("Поле email не соответствует минимальным требованиям"))
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Поле email не соответствует минимальным требованиям"})
 	}
-	if err := validate.Var(user.Password, "required,min=6,max=30"); err != nil {
-		return c.JSON(s.NewError("Минимальная длина пароля 8, а максимальная 30 символов"))
+	if err := validate.Var(user.Password, "required,min=6"); err != nil {
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Минимальная длина пароля 6 символов"})
 	}
 
 	// хешируем пароль
-	hashedPassword, err := utils.HashPassword(user.Password)
+	hashedPassword, err := password.HashPassword(user.Password)
 	if err != nil {
 		log.Printf("Ошибка хеширования пароля: %v", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Server error"})
@@ -40,11 +43,17 @@ func (s *Service) Register(c echo.Context) error {
 
 	// вносим данные в таблицу
 	if err = repo.RegisterByEmail(user.Email, hashedPassword, time.Now()); err != nil {
+		// отлов ошибки с идентичным имейлом
+		var pgErr *pq.Error
+		ok := errors.As(err, &pgErr)
+		if ok && pgErr.Code == "23505" {
+			return c.JSON(http.StatusBadRequest, map[string]string{"error": "Пользователь с таким email уже существует"})
+		}
 		log.Printf("Ошибка при попытке выполнить sql-запрос: %v", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Server error"})
 	}
 
-	return c.JSON(http.StatusOK, "Пользователь был создан")
+	return c.JSON(http.StatusOK, map[string]string{"success": "Пользователь был успешно создан"})
 }
 
 func (s *Service) Login(c echo.Context) error {
@@ -56,33 +65,26 @@ func (s *Service) Login(c echo.Context) error {
 
 	// соответствие полей
 	if err := validate.Struct(user); err != nil {
-		return c.JSON(s.NewError("Ошибка авторизации"))
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Ошибка авторизации"})
 	}
 
 	repo := s.usersRepo
 
-	// достаем пароль
-	storedPassword, err := repo.SelectPasswordByEmail(user.Email)
-	if err != nil {
-		log.Printf("Ошибка при попытке достать пароль по имейлу: %v", err)
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Server error"})
-	}
-
-	// достаем айди
-	userID, err := repo.SelectIdByEmail(user.Email)
+	// достаем айди и пароль
+	userID, storedPassword, err := repo.SelectIdAndEmail(user.Email)
 	if err != nil {
 		log.Printf("Ошибка при попытке достать айди по имейлу: %v", err)
-		return c.JSON(s.NewError(InternalServerError))
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Неправильный логин или пароль"})
 	}
 
 	// проверка паролей
-	if err := utils.CheckPassword(storedPassword, user.Password); err != nil {
+	if err := password.CheckPassword(storedPassword, user.Password); err != nil {
 		log.Printf("Пароли не совпадают: %v", err)
-		return c.JSON(s.NewError("Ошибка логина или пароля"))
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Неправильный логин или пароль"})
 	}
 
 	// генерируем токен
-	token, err := utils.GenerateToken(userID)
+	token, err := jwt.GenerateToken(userID)
 	if err != nil {
 		log.Printf("Ошибка генерации токена: %v", err)
 		return c.JSON(s.NewError(InternalServerError))
