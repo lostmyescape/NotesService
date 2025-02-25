@@ -36,5 +36,4 @@ func main() {
 	api.DELETE("/note/:id", svc.DeleteNoteHandler, middleware.AuthMiddleware)
 
 	router.Logger.Fatal(router.Start(":8080"))
-
 }
