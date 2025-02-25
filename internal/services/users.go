@@ -72,13 +72,13 @@ func (s *Service) Login(c echo.Context) error {
 	userID, err := repo.SelectIdByEmail(user.Email)
 	if err != nil {
 		log.Printf("Ошибка при попытке достать айди по имейлу: %v", err)
-		return c.JSON(s.NewError(InternalServerError))
+		return c.JSON(s.NewError("Неправильный логин или пароль"))
 	}
 
 	// проверка паролей
 	if err := utils.CheckPassword(storedPassword, user.Password); err != nil {
 		log.Printf("Пароли не совпадают: %v", err)
-		return c.JSON(s.NewError("Ошибка логина или пароля"))
+		return c.JSON(s.NewError("Неправильный логин или пароль"))
 	}
 
 	// генерируем токен

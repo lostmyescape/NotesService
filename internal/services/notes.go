@@ -41,6 +41,8 @@ func (s *Service) CreateNoteHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Server error"})
 	}
 
+	log.Printf("Заметка была успешно взята из внешнего api")
+
 	// в конец заметки дополняем цитатой, взятой из внешнего апи
 	note.Body = fmt.Sprintf("%s, цитата: %s", note.Body, quote)
 
