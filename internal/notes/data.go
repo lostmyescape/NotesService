@@ -1,8 +1,8 @@
 package notes
 
 import (
-	notes2 "NotesService/internal/models/notes"
 	"database/sql"
+	"fmt"
 	"time"
 )
 
@@ -27,8 +27,8 @@ func (r *Repo) CreateNote(userID int, title, body string, createdAt time.Time) e
 }
 
 // GetAllNotes получит все записки авторизированного юзера
-func (r *Repo) GetAllNotes(userID int) (*[]notes2.GetNotes, error) {
-	var notes []notes2.GetNotes
+func (r *Repo) GetAllNotes(userID int) (*[]Notes, error) {
+	var notes []Notes
 
 	query := `
 		SELECT id, title, body, created_at 
@@ -42,7 +42,7 @@ func (r *Repo) GetAllNotes(userID int) (*[]notes2.GetNotes, error) {
 	}
 
 	for rows.Next() {
-		var note notes2.GetNotes
+		var note Notes
 		err := rows.Scan(&note.Id, &note.Title, &note.Body, &note.CreatedAt)
 		if err != nil {
 			return nil, err
@@ -58,8 +58,8 @@ func (r *Repo) GetAllNotes(userID int) (*[]notes2.GetNotes, error) {
 }
 
 // GetNoteById получаем записку у авторизированного юзера по айди заметки
-func (r *Repo) GetNoteById(userID, id int) (*notes2.GetNotes, error) {
-	var note notes2.GetNotes
+func (r *Repo) GetNoteById(userID, id int) (*Notes, error) {
+	var note Notes
 	err := r.db.QueryRow(`
 								SELECT id, title, body, created_at 
 								FROM notes 
@@ -74,13 +74,23 @@ func (r *Repo) GetNoteById(userID, id int) (*notes2.GetNotes, error) {
 
 func (r *Repo) UpdateNoteById(title, body string, userID, id int) error {
 
-	_, err := r.db.Exec(`
+	result, err := r.db.Exec(`
 								UPDATE notes						
 								SET title = $1, body = $2							
 								WHERE user_id = $3 AND id = $4
 						`, title, body, userID, id)
 	if err != nil {
 		return err
+	}
+
+	// Проверка количества затронутых строк
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return fmt.Errorf("note not found or does not belong to user")
 	}
 
 	return nil

@@ -1,7 +1,7 @@
 package services
 
 import (
-	notes2 "NotesService/internal/models/notes"
+	notes2 "NotesService/internal/notes"
 	"NotesService/internal/services/quotes"
 	"fmt"
 	"github.com/labstack/echo/v4"
@@ -28,10 +28,10 @@ func (s *Service) CreateNoteHandler(c echo.Context) error {
 
 	// валидация полей
 	if err := validate.Var(note.Title, "required,max=20"); err != nil {
-		return c.JSON(s.NewError("Максимальная длина тайтла 20 символов"))
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Максимальная длина title 20 символов"})
 	}
 	if err := validate.Var(note.Body, "required,min=10,max=80"); err != nil {
-		return c.JSON(s.NewError("Минимальная длина бади 10, а максимальная 80 символов"))
+		return c.JSON(http.StatusBadRequest, map[string]string{"error": "Минимальная длина body 10, а максимальная 80 символов"})
 	}
 
 	// получаем цитату из внешнего апи
@@ -44,7 +44,7 @@ func (s *Service) CreateNoteHandler(c echo.Context) error {
 	log.Printf("Заметка была успешно взята из внешнего api")
 
 	// в конец заметки дополняем цитатой, взятой из внешнего апи
-	note.Body = fmt.Sprintf("%s, цитата: %s", note.Body, quote)
+	note.Body = fmt.Sprintf("%s. %s", note.Body, quote)
 
 	repo := s.notesRepo
 
@@ -54,7 +54,7 @@ func (s *Service) CreateNoteHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Server error"})
 	}
 
-	return c.JSON(http.StatusOK, "Записка была добавлена")
+	return c.JSON(http.StatusOK, map[string]string{"success": "Записка была добавлена"})
 }
 
 // GetAllNotesHandler получаем все записки из бд
@@ -71,6 +71,11 @@ func (s *Service) GetAllNotesHandler(c echo.Context) error {
 	if err != nil {
 		log.Printf("Ошибка выполнения sql-запроса: %v", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Server error"})
+	}
+
+	// если заметки пустые
+	if notes == nil || len(*notes) == 0 {
+		return c.JSON(http.StatusNotFound, map[string]string{"error": "No notes found"})
 	}
 
 	return c.JSON(http.StatusOK, notes)
@@ -134,11 +139,14 @@ func (s *Service) UpdateNoteHandler(c echo.Context) error {
 
 	// обновляем записку
 	if err := repo.UpdateNoteById(note.Title, note.Body, userID, id); err != nil {
+		if err.Error() == "note not found or does not belong to user" {
+			return c.JSON(http.StatusNotFound, map[string]string{"error": "Записка не найдена или не принадлежит пользователю"})
+		}
 		log.Printf("Ошибка выполнения sql-запроса: %v", err)
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Server error"})
 	}
 
-	return c.JSON(http.StatusOK, "Записка успешно обновлена")
+	return c.JSON(http.StatusOK, map[string]string{"success": "Записка успешно обновлена"})
 }
 
 // DeleteNoteHandler удаляем записку из бд
@@ -161,6 +169,6 @@ func (s *Service) DeleteNoteHandler(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "Server error"})
 	}
 
-	return c.JSON(http.StatusOK, "Записка была успешно удалена")
+	return c.JSON(http.StatusOK, map[string]string{"success": "Записка успешно удалена"})
 
 }

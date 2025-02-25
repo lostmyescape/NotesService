@@ -39,13 +39,18 @@ func (r *Repo) SelectPasswordByEmail(email string) (string, error) {
 	return password, nil
 }
 
-// SelectIdByEmail достанет айди
-func (r *Repo) SelectIdByEmail(email string) (int, error) {
+// SelectIdAndEmail достанет айди и имейл
+func (r *Repo) SelectIdAndEmail(email string) (int, string, error) {
 	var userID int
-	err := r.db.QueryRow(`SELECT id FROM users WHERE email = $1`, email).Scan(&userID)
+	var storedPassword string
+
+	err := r.db.QueryRow(`
+		SELECT id, hashed_password FROM users WHERE email = $1
+	`, email).Scan(&userID, &storedPassword)
+
 	if err != nil {
-		return 0, err
+		return 0, "", err
 	}
 
-	return userID, nil
+	return userID, storedPassword, nil
 }
